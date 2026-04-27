@@ -112,7 +112,7 @@ const ProgressLoader = ({ progress }: { progress: number }) => {
           style={{
             strokeDasharray: perimeter, // Set the total length of dashes (perimeter)
             strokeDashoffset: strokeDashoffset, // Set the offset to show progress
-            transition: 'stroke-dashoffset 1s ease-in-out', // Smooth transition effect
+            transition: 'stroke-dashoffset 0.3s ease-in-out', // Smooth transition effect
           }}
         />
       </svg>

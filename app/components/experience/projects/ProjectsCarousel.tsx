@@ -4,13 +4,22 @@ import ProjectTile from "./ProjectTile";
 
 import { PROJECTS } from "@constants";
 import { usePortalStore } from "@stores";
+import { Project } from "@types";
+import { DataCoreScene } from "../../models/DataCoreScene";
 
-const ProjectsCarousel = () => {
+interface ProjectsCarouselProps {
+  onHover: (project: Project | null) => void;
+}
+
+const ProjectsCarousel = ({ onHover }: ProjectsCarouselProps) => {
   const [activeId, setActiveId] = useState<number | null>(null);
   const isActive = usePortalStore((state) => state.activePortalId === "projects");
 
   useEffect(() => {
-    if (!isActive) setActiveId(null);
+    if (!isActive) {
+      setActiveId(null);
+      onHover(null);
+    }
   }, [isActive]);
 
   const onClick = (id: number) => {
@@ -38,13 +47,15 @@ const ProjectsCarousel = () => {
           rotation={[0, rotY, 0]}
           activeId={activeId}
           onClick={() => onClick(i)}
+          onHover={onHover}
         />
       );
     });
-  }, [activeId, isActive]);
+  }, [activeId, isActive, onHover]);
 
   return (
     <group rotation={[0, -Math.PI / 12, 0]}>
+      <DataCoreScene />
       {tiles}
     </group>
   );

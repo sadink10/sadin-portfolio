@@ -2,7 +2,7 @@ import { ScrollControls } from "@react-three/drei";
 import { usePortalStore, useScrollStore } from "@stores";
 import { useEffect } from "react";
 import * as THREE from "three";
-import { Memory } from "../../models/Memory";
+import { SpaceScene } from "../../models/SpaceScene";
 import Timeline from "./Timeline";
 
 const Work = () => {
@@ -45,12 +45,12 @@ const Work = () => {
 
   return (
     <group>
-      <mesh receiveShadow>
-        <planeGeometry args={[4, 4, 1]} />
+      <mesh receiveShadow position={[0, 0, -5]}>
+        <planeGeometry args={[10, 10, 1]} />
         <shadowMaterial opacity={0.1} />
       </mesh>
-      <ScrollControls style={{ zIndex: -1}} pages={2} maxSpeed={0.4}>
-        <Memory scale={new THREE.Vector3(5, 5, 5)} position={new THREE.Vector3(0, -6, 1)}/>
+      <ScrollControls style={{ zIndex: -1}} pages={3} maxSpeed={0.4}>
+        <SpaceScene />
         <Timeline progress={isActive ? scrollProgress : 0} />
       </ScrollControls>
     </group>

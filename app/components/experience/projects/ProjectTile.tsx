@@ -1,12 +1,44 @@
-import { Edges, Text, TextProps } from "@react-three/drei";
-import { ThreeEvent } from "@react-three/fiber";
+import { ThreeEvent, useFrame } from "@react-three/fiber";
 import gsap from "gsap";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { isMobile } from "react-device-detect";
 import * as THREE from "three";
 
 import { usePortalStore } from "@stores";
 import { Project } from "@types";
+
+// ─── CONTROLLED PALETTE ────────────────────────────────────────────────
+// Cyan → Blue → Purple with minimal accents. Intentional, not random.
+const ARTIFACT_CONFIGS = [
+  { color: "#00e5ff", emissive: "#004455" },   // cyan
+  { color: "#2979ff", emissive: "#0d2255" },   // blue
+  { color: "#7c4dff", emissive: "#221155" },   // purple
+  { color: "#00bcd4", emissive: "#003844" },   // teal
+  { color: "#536dfe", emissive: "#1a2244" },   // indigo
+  { color: "#448aff", emissive: "#112244" },   // sky blue
+  { color: "#6200ea", emissive: "#150033" },   // deep purple
+  { color: "#00b8d4", emissive: "#003340" },   // dark cyan
+  { color: "#b388ff", emissive: "#2a1d44" },   // lavender
+];
+
+// ─── GEOMETRY COMPONENT ────────────────────────────────────────────────
+// Each project gets a unique shape.
+function ArtifactShape({ index }: { index: number }) {
+  const shapes = [
+    <boxGeometry key={0} args={[0.7, 0.7, 0.7]} />,
+    <octahedronGeometry key={1} args={[0.55, 0]} />,
+    <icosahedronGeometry key={2} args={[0.55, 0]} />,
+    <torusGeometry key={3} args={[0.4, 0.18, 16, 24]} />,
+    <torusKnotGeometry key={4} args={[0.35, 0.1, 48, 8]} />,
+    <dodecahedronGeometry key={5} args={[0.5, 0]} />,
+    <cylinderGeometry key={6} args={[0.35, 0.35, 0.7, 6]} />,
+    <coneGeometry key={7} args={[0.45, 0.9, 5]} />,
+    <tetrahedronGeometry key={8} args={[0.6, 0]} />,
+  ];
+  return shapes[index % shapes.length];
+}
+
+// ─── MAIN COMPONENT ───────────────────────────────────────────────────
 
 interface ProjectTileProps {
   project: Project;
@@ -15,147 +47,160 @@ interface ProjectTileProps {
   rotation: [number, number, number];
   activeId: number | null;
   onClick: () => void;
+  onHover: (project: Project | null) => void;
 }
 
-const ProjectTile = ({ project, index, position, rotation, activeId, onClick }: ProjectTileProps) => {
-  const projectRef = useRef<THREE.Group>(null);
-  const hoverAnimRef = useRef<gsap.core.Timeline | null>(null);
-  const [hovered, setHovered] = useState(false);
-  const isProjectSectionActive = usePortalStore((state) => state.activePortalId === "projects");
+const ProjectTile = ({
+  project,
+  index,
+  position,
+  rotation,
+  activeId,
+  onClick,
+  onHover,
+}: ProjectTileProps) => {
+  const groupRef = useRef<THREE.Group>(null);
+  const artifactRef = useRef<THREE.Mesh>(null);
+  const glowRef = useRef<THREE.Mesh>(null);
+  const hoveredRef = useRef(false);
+  const isProjectSectionActive = usePortalStore(
+    (state) => state.activePortalId === "projects"
+  );
 
-  const titleProps = useMemo(() => ({
-    font: "./soria-font.ttf",
-    color: "black",
-  }), []);
+  const config = ARTIFACT_CONFIGS[index % ARTIFACT_CONFIGS.length];
 
-  const subtitleProps: Partial<TextProps> = useMemo(() => ({
-    font: "./Vercetti-Regular.woff",
-    color: "black",
-    anchorX: "left",
-    anchorY: "top",
-  }), []);
+  // Unique per-instance seeds for layered animation
+  const seeds = useMemo(
+    () => ({
+      bobSpeed: 0.3 + (index * 0.07) % 0.3,
+      bobAmp: 0.08 + (index * 0.02) % 0.06,
+      rotSpeed: 0.15 + (index * 0.04) % 0.2,
+      driftRadius: 0.04 + (index * 0.01) % 0.04,
+      driftSpeed: 0.1 + (index * 0.03) % 0.15,
+      phase: (index * 1.7) % (Math.PI * 2),
+    }),
+    [index]
+  );
 
-  useEffect(() => {
-    if (!projectRef.current) return;
-    hoverAnimRef.current?.kill();
+  // ── Layered animation: rotation + bobbing + orbital drift ──
+  useFrame((state) => {
+    if (!artifactRef.current) return;
+    const t = state.clock.elapsedTime;
+    const s = seeds;
 
-    const [mesh, title, dateGroup, textBox, button] = projectRef.current.children;
+    // Self rotation
+    artifactRef.current.rotation.x = t * s.rotSpeed;
+    artifactRef.current.rotation.y = t * s.rotSpeed * 1.3;
 
-    hoverAnimRef.current = gsap.timeline();
-    hoverAnimRef.current
-      .to(projectRef.current.position, { z: hovered ? 1 : 0, duration: 0.2 }, 0)
-      .to(projectRef.current.position, { y: hovered ? 0.4 : 0 }, 0)
-      .to(projectRef.current.scale, {
-        x: hovered ? 1.3 : 1,
-        y: hovered ? 1.3 : 1,
-        z: hovered ? 1.3 : 1,
-      }, 0)
-      .to(title.position, { y: hovered ? 0.7 : -0.8 }, 0)
-      .to(textBox.position, { y: hovered ? 0.7 : 0 }, 0)
-      // .to(textBox.scale, { y: hovered ? 1 : 0, x: hovered ? 1 : 0 }, 0)
-      .to(textBox, { fillOpacity: hovered ? 1 : 0, duration: 0.4 }, 0)
-      .to(dateGroup.position, { y: hovered ? 2.6 : 1.4 }, 0)
-      .to(mesh.scale, { y: hovered ? 2 : 1 }, 0)
-      .to((mesh as THREE.Mesh).material, { opacity: hovered ? 0.95 : 0.3 }, 0)
-      .to(mesh.position, { y: hovered ? 1 : 0 }, 0);
+    // Bob up/down
+    artifactRef.current.position.y = Math.sin(t * s.bobSpeed + s.phase) * s.bobAmp;
 
-    if (project.url) {
-      hoverAnimRef.current
-        .to(button.scale, { y: hovered ? 1 : 0, x: hovered ? 1 : 0 }, 0)
-        .to(button.position, { z: hovered ? 0.3 : -1 }, 0);
+    // Slight orbital drift
+    artifactRef.current.position.x =
+      Math.cos(t * s.driftSpeed + s.phase) * s.driftRadius;
+    artifactRef.current.position.z =
+      Math.sin(t * s.driftSpeed * 0.7 + s.phase) * s.driftRadius;
+  });
+
+  // ── Hover animation ──
+  const setHovered = (hovered: boolean) => {
+    hoveredRef.current = hovered;
+
+    if (artifactRef.current) {
+      gsap.to(artifactRef.current.scale, {
+        x: hovered ? 1.4 : 1.15,
+        y: hovered ? 1.4 : 1.15,
+        z: hovered ? 1.4 : 1.15,
+        duration: 0.3,
+      });
+      const mat = artifactRef.current.material as THREE.MeshStandardMaterial;
+      gsap.to(mat, {
+        emissiveIntensity: hovered ? 2.5 : 1.2,
+        duration: 0.3,
+      });
     }
-  }, [hovered]);
 
+    if (glowRef.current) {
+      const gMat = glowRef.current.material as THREE.MeshBasicMaterial;
+      gsap.to(gMat, {
+        opacity: hovered ? 0.25 : 0.12,
+        duration: 0.3,
+      });
+    }
+
+    onHover(hovered ? project : null);
+  };
+
+  // ── Mobile: use activeId for hover state ──
   useEffect(() => {
     if (isMobile) {
       setHovered(activeId === index);
     }
   }, [isMobile, activeId]);
 
+  // ── Animate in when portal becomes active ──
   useEffect(() => {
-    if (projectRef.current) {
-      gsap.to(projectRef.current.position, {
+    if (groupRef.current) {
+      gsap.to(groupRef.current.position, {
         y: isProjectSectionActive ? 0 : -10,
         duration: 1,
-        delay: isProjectSectionActive ? index * 0.1 : 0,
+        delay: isProjectSectionActive ? index * 0.08 : 0,
       });
     }
   }, [isProjectSectionActive]);
 
+  // ── Click handler ──
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
-    if (!project.url) return;
-    const button = e.eventObject;
-    gsap.to(button.position, { z: 0, duration: 0.1 })
-      .then(() => gsap.to(button.position, { z: 0.3, duration: 0.3 }));
-    setTimeout(() => window.open(project.url, '_blank'), 50);
+    if (isMobile) {
+      onClick();
+    }
   };
 
   return (
-    <group
-      position={position}
-      rotation={rotation}
-      onClick={onClick}
-      onPointerOver={() => !isMobile && isProjectSectionActive && setHovered(true)}
-      onPointerOut={() => !isMobile && isProjectSectionActive && setHovered(false)}>
-      <group ref={projectRef}>
-        <mesh>
-          <planeGeometry args={[4.2, 2, 1]} />
-          <meshBasicMaterial color="#FFF" transparent opacity={0.3}/>
-          {/* <meshPhysicalMaterial transmission={1} roughness={0.3} /> */}
-          <Edges color="black" lineWidth={1.5} />
+    <group position={position} rotation={rotation}>
+      <group
+        ref={groupRef}
+        onClick={handleClick}
+        onPointerOver={() =>
+          !isMobile && isProjectSectionActive && setHovered(true)
+        }
+        onPointerOut={() =>
+          !isMobile && isProjectSectionActive && setHovered(false)
+        }
+      >
+        {/* Main artifact mesh */}
+        <mesh ref={artifactRef} scale={[1.15, 1.15, 1.15]}>
+          <ArtifactShape index={index} />
+          <meshStandardMaterial
+            color={config.color}
+            emissive={config.color}
+            emissiveIntensity={1.2}
+            metalness={0.7}
+            roughness={0.1}
+            transparent={false}
+          />
         </mesh>
-        <Text
-          {...titleProps}
-          position={[-1.9, -0.8, 0.101]}
-          anchorX="left"
-          anchorY="bottom"
-          maxWidth={4}
-          fontSize={0.8}>
-          {project.title}
-        </Text>
-        <group position={[-1.25, 1.4, 0.01]}>
-          <mesh>
-            <planeGeometry args={[1.7, 0.4, 1]} />
-            <meshBasicMaterial color="#777" opacity={0} wireframe />
-            <Edges color="black" lineWidth={1} />
-          </mesh>
-          <Text
-            {...subtitleProps}
-            position={[-0.7, 0.2, 0]}
-            fontSize={0.3}>
-            {project.date.toUpperCase()}
-          </Text>
-        </group>
-        <Text
-          {...subtitleProps}
-          maxWidth={3.8}
-          position={[-1.9, 2.3, 0.1]}
-          // scale={[0, 0, 1]}
-          fontSize={0.2}>
-          {project.subtext}
-        </Text>
-        {project.url && (
-          <group
-            position={[1.3, -0.6, -1]}
-            scale={[0, 0, 1]}
-            onClick={handleClick}
-            onPointerOver={() => document.body.style.cursor = 'pointer'}
-            onPointerOut={() => document.body.style.cursor = 'auto'}>
-            <mesh>
-              <boxGeometry args={[1.1, 0.4, 0.2]} />
-              <meshBasicMaterial color="#222" />
-              <Edges color="white" lineWidth={1} />
-            </mesh>
-            <Text
-              {...subtitleProps}
-              color="white"
-              position={[-0.4, 0.15, 0.2]}
-              fontSize={0.25}>
-              VIEW ↗
-            </Text>
-          </group>
-        )}
+
+        {/* Glow sphere — stronger, additive */}
+        <mesh ref={glowRef}>
+          <sphereGeometry args={[1.2, 16, 16]} />
+          <meshBasicMaterial
+            color={config.color}
+            transparent
+            opacity={0.12}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+            side={THREE.BackSide}
+          />
+        </mesh>
+
+        {/* Stronger point light per artifact */}
+        <pointLight
+          color={config.color}
+          intensity={0.8}
+          distance={6}
+        />
       </group>
     </group>
   );

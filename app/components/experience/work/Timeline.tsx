@@ -13,49 +13,98 @@ const reusableLeft = new THREE.Vector3(-0.3, 0, -0.1);
 const reusableRight = new THREE.Vector3(0.3, 0, -0.1);
 
 const TimelinePoint = ({ point, diff }: { point: WorkTimelinePoint, diff: number }) => {
-  const getPoint = useMemo(() => {
-    switch (point.position) {
-      case 'left': return reusableLeft;
-      case 'right': return reusableRight;
-      default: return new THREE.Vector3();
+  const reticleRef = useRef<THREE.Group>(null);
+  
+  useFrame((state) => {
+    if (reticleRef.current) {
+      reticleRef.current.rotation.z = state.clock.elapsedTime * 0.5;
     }
-  }, [point.position]);
+  });
 
-  const textAlign = point.position === 'left' ? 'right' : 'left';
+  const isLeft = point.position === 'left';
+  const getPoint = useMemo(() => {
+    // Increased offset to make room for text and leader line
+    return isLeft ? new THREE.Vector3(-0.6, 0.2, 0) : new THREE.Vector3(0.6, 0.2, 0);
+  }, [isLeft]);
 
-  const textProps: Partial<TextProps> = useMemo(() => ({
+  const textAlign = isLeft ? 'right' : 'left';
+  const sign = isLeft ? -1 : 1;
+
+  // Opacity fading based on scroll diff
+  const opacity = Math.max(0, 1 - diff * 1.5);
+  
+  // Base text props
+  const baseTextProps: Partial<TextProps> = useMemo(() => ({
     font: "./Vercetti-Regular.woff",
-    color: "white",
     anchorX: textAlign,
-    fillOpacity: 2 - 2 * diff,
-  }), [textAlign, diff]);
-
-  const titleProps = useMemo(() => ({
-    ...textProps,
-    font: "./soria-font.ttf",
-    fontSize: 0.6,
-    maxWidth: 3,
-  }), [textProps]);
+    anchorY: "middle",
+    fillOpacity: opacity,
+    depthTest: false, // Ensure text draws over the background
+  }), [textAlign, opacity]);
 
   return (
     <group position={point.point} scale={isMobile ? 0.35 : 0.6}>
-      <Box args={[0.2, 0.2, 0.2]} position={[0, 0, -0.1]} scale={[1 - diff, 1 - diff, 1 - diff]}>
-        <meshBasicMaterial color="white" wireframe />
-        <Edges color="white" lineWidth={1.5} />
-      </Box>
+      {/* Sci-Fi Reticle */}
+      <group ref={reticleRef} scale={[1 - diff * 0.5, 1 - diff * 0.5, 1 - diff * 0.5]}>
+        <mesh>
+          <torusGeometry args={[0.2, 0.015, 8, 32]} />
+          <meshBasicMaterial color="#00e5ff" transparent opacity={opacity * 0.8} />
+        </mesh>
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.15, 0.01, 8, 32]} />
+          <meshBasicMaterial color="#7c4dff" transparent opacity={opacity * 0.6} />
+        </mesh>
+        {/* Center dot */}
+        <mesh>
+          <sphereGeometry args={[0.03, 8, 8]} />
+          <meshBasicMaterial color="#ffffff" transparent opacity={opacity} />
+        </mesh>
+      </group>
+
       <group>
+        {/* Leader Line */}
+        <Line 
+          points={[[0, 0, 0], [getPoint.x * 0.5, getPoint.y, 0], [getPoint.x, getPoint.y, 0]]} 
+          color="#00e5ff" 
+          lineWidth={1.5}
+          transparent
+          opacity={opacity * 0.5} 
+        />
+
+        {/* Text and HUD Panel */}
         <group position={getPoint}>
-          <Text {...textProps} fontSize={0.3} position={[-diff / 2, 0, 0]}>
+          {/* Text Elements */}
+          <Text 
+            {...baseTextProps} 
+            color="#00e5ff" 
+            fontSize={0.2} 
+            position={[0, 0.15, 0]}
+            letterSpacing={0.1}
+          >
             {point.year}
           </Text>
-          <group position={[0, -0.5, 0]}>
-            <Text {...titleProps} fontSize={0.6} maxWidth={3} position={[0, -diff / 2, 0]}>
-              {point.title}
-            </Text>
-            <Text {...textProps} fontSize={0.2} position={[0, -0.4 - diff, 0]}>
-              {point.subtitle}
-            </Text>
-          </group>
+          
+          <Text 
+            {...baseTextProps} 
+            font="./soria-font.ttf"
+            color="#ffffff" 
+            fontSize={0.4} 
+            position={[0, -0.2, 0]}
+            maxWidth={3}
+          >
+            {point.title}
+          </Text>
+
+          <Text 
+            {...baseTextProps} 
+            color="#aabbee" 
+            fontSize={0.15} 
+            position={[0, -0.55, 0]}
+            maxWidth={2.8}
+            lineHeight={1.4}
+          >
+            {point.subtitle}
+          </Text>
         </group>
       </group>
     </group>
@@ -77,9 +126,19 @@ const Timeline = ({ progress }: { progress: number }) => {
 
   useFrame((_, delta) => {
     if (isActive) {
-      const position = curve.getPoint(progress);
-      camera.position.x = THREE.MathUtils.damp(camera.position.x, (isMobile ? -1 : -2) + position.x, 4, delta);
-      camera.position.y = THREE.MathUtils.damp(camera.position.y, -39 + position.z, 4, delta);
+      const t = Math.min(progress, 0.99);
+      const position = curve.getPoint(t);
+
+      // Look slightly ahead on the curve for anticipation
+      const lookAhead = curve.getPoint(Math.min(t + 0.04, 1));
+
+      // The Experience group is rotated: local Y → world -Z, local Z → world Y
+      // Original working mapping preserved with smooth anticipation offset
+      const anticipationX = (lookAhead.x - position.x) * 0.3;
+      const anticipationY = (lookAhead.z - position.z) * 0.3;
+
+      camera.position.x = THREE.MathUtils.damp(camera.position.x, (isMobile ? -1 : -2) + position.x + anticipationX, 4, delta);
+      camera.position.y = THREE.MathUtils.damp(camera.position.y, -39 + position.z + anticipationY, 4, delta);
       camera.position.z = THREE.MathUtils.damp(camera.position.z, 13 - position.y, 4, delta);
     }
   });
@@ -123,15 +182,17 @@ const Timeline = ({ progress }: { progress: number }) => {
 
   return (
     <group position={[0, -0.1, -0.1]}>
-      <Line points={visibleCurvePoints} color="white" lineWidth={3} />
+      <Line points={visibleCurvePoints} color="#00e5ff" lineWidth={2} transparent opacity={0.3} />
       {visibleDashedCurvePoints.length > 0 && (
         <Line
           points={visibleDashedCurvePoints}
-          color="white"
-          lineWidth={0.5}
+          color="#ffffff"
+          lineWidth={1.5}
           dashed
-          dashSize={0.25}
-          gapSize={0.25}
+          dashSize={0.4}
+          gapSize={0.2}
+          transparent
+          opacity={0.8}
         />
       )}
       <group ref={groupRef}>

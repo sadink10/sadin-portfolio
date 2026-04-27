@@ -10,7 +10,7 @@ Title: Residential Window
 
 'use client';
 
-import { useGLTF, useScroll } from '@react-three/drei';
+import { useGLTF, useScroll, useTexture } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import * as THREE from 'three';
@@ -26,11 +26,39 @@ type GLTFResult = GLTF & {
     WIN0003_Textures: THREE.MeshPhysicalMaterial
   }
 }
+
 const WindowModel = (props: Partial<THREE.Object3D>) => {
   const handleRef = useRef<THREE.Mesh>(null);
   const windowRef = useRef<THREE.Mesh>(null);
 
-  const { nodes, materials } = useGLTF('models/window.glb', true ) as GLTFResult
+  const { nodes } = useGLTF('models/window.glb', true ) as GLTFResult;
+
+  // Load old wood textures
+  const [
+    woodAlbedo, woodNormal, woodRoughness
+  ] = useTexture([
+    '/textures/door/old_wood_albedo.png',
+    '/textures/door/old_wood_normal.png',
+    '/textures/door/old_wood_roughness.png'
+  ]);
+
+  // Load rusted iron textures
+  const [
+    ironAlbedo, ironNormal, ironRoughness
+  ] = useTexture([
+    '/textures/door/rusted_iron_albedo.png',
+    '/textures/door/rusted_iron_normal.png',
+    '/textures/door/rusted_iron_roughness.png'
+  ]);
+
+  // Configure textures for an 8-bit pixelated look
+  [woodAlbedo, woodNormal, woodRoughness, ironAlbedo, ironNormal, ironRoughness].forEach((t) => {
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.magFilter = THREE.NearestFilter;
+    t.minFilter = THREE.NearestFilter;
+    t.generateMipmaps = false;
+  });
+
   const data = useScroll();
   useFrame(() => {
     const b = data.range(0.4, 0.1);
@@ -47,25 +75,58 @@ const WindowModel = (props: Partial<THREE.Object3D>) => {
   return (
     <group {...props} dispose={null}>
       <group rotation={[0, Math.PI, Math.PI]}>
+        {/* Door Frame - Wood Material */}
         <mesh
           castShadow
           receiveShadow
           geometry={nodes['#WIN0003_Frame_#WIN0003_Textures_0'].geometry}
-          material={materials.WIN0003_Textures}
-        />
-        <group position={[0.441, -0.039, 0.082]}
-          ref={windowRef}>
+        >
+          <meshPhysicalMaterial
+            map={woodAlbedo}
+            normalMap={woodNormal}
+            roughnessMap={woodRoughness}
+            roughness={1.5}
+            metalness={0}
+            normalScale={new THREE.Vector2(0.5, 0.5)}
+            color="#3a2b1c" // Darker, less detailed aged wood
+          />
+        </mesh>
+
+        <group position={[0.441, -0.039, 0.082]} ref={windowRef}>
+          {/* Door Panel (Window Mesh) - Wood Material */}
           <mesh
             castShadow
             receiveShadow
             geometry={nodes['#WIN0003_Window_#WIN0003_Textures_0'].geometry}
-            material={materials.WIN0003_Textures}/>
-          <mesh ref={handleRef}
+          >
+            <meshPhysicalMaterial
+              map={woodAlbedo}
+              normalMap={woodNormal}
+              roughnessMap={woodRoughness}
+              roughness={1.5}
+              metalness={0}
+              normalScale={new THREE.Vector2(0.5, 0.5)}
+              color="#3a2b1c"
+            />
+          </mesh>
+
+          {/* Door Handle - Rusted Iron Material */}
+          <mesh
+            ref={handleRef}
             castShadow
             receiveShadow
             geometry={nodes['#WIN0003_Handle_#WIN0003_Textures_0'].geometry}
-            material={materials.WIN0003_Textures}
-            position={[-0.84, -0.018, 0.55]} />
+            position={[-0.84, -0.018, 0.55]}
+          >
+            <meshPhysicalMaterial
+              map={ironAlbedo}
+              normalMap={ironNormal}
+              roughnessMap={ironRoughness}
+              roughness={1}
+              metalness={0.3} // Heavily rusted
+              normalScale={new THREE.Vector2(0.5, 0.5)}
+            />
+          </mesh>
         </group>
       </group>
     </group>
@@ -73,5 +134,13 @@ const WindowModel = (props: Partial<THREE.Object3D>) => {
 }
 
 useGLTF.preload('models/window.glb');
+[
+  '/textures/door/old_wood_albedo.png',
+  '/textures/door/old_wood_normal.png',
+  '/textures/door/old_wood_roughness.png',
+  '/textures/door/rusted_iron_albedo.png',
+  '/textures/door/rusted_iron_normal.png',
+  '/textures/door/rusted_iron_roughness.png'
+].forEach(url => useTexture.preload(url));
 
 export default WindowModel;

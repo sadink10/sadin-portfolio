@@ -186,11 +186,13 @@ const GridTile = (props: GridTileProps) => {
         <mesh position={[0, 0, -0.01]} ref={hoverBoxRef} scale={[0, 0, 0]}>
           <boxGeometry args={[4, 4, 0.5]}/>
           <meshPhysicalMaterial
-            color="#444"
+            color="#050510"
+            metalness={0.9}
+            roughness={0.1}
             transparent={true}
-            opacity={0.3}
+            opacity={0.85}
           />
-          <Edges color="white" lineWidth={3}/>
+          <Edges color={id === 'work' ? '#00e5ff' : '#7c4dff'} lineWidth={2}/>
         </mesh>
         <Text position={[0, -1.8, 0.4]} {...fontProps} ref={titleRef}>
           {title}
