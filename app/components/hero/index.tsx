@@ -77,7 +77,6 @@ const Hero = () => {
           fontSize={0.45}
           letterSpacing={0.4}
           color="#a0b0c0"
-          depthTest={false}
           renderOrder={1000}
         >
           HI, I AM
@@ -106,7 +105,6 @@ const Hero = () => {
           strokeWidth={0.04}
           strokeColor={hovered ? "#66aaff" : "#4488cc"}
           strokeOpacity={0.6}
-          depthTest={false}
           renderOrder={999}
         >
           SADIN K
