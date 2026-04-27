@@ -19,6 +19,7 @@ const Home = () => {
   return (
     <main style={{ position: 'relative', width: '100%', minHeight: '100vh', ...noiseOverlayStyle }}>
       <GhostCursor 
+        className=""   // ✅ REQUIRED
         style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1 }}
         color="#ffffff"
         brightness={0.7}
@@ -26,6 +27,9 @@ const Home = () => {
         inertia={0.15}
         bloomStrength={0.05}
         grainIntensity={0.02}
+        targetPixels={120}        // ✅ REQUIRED
+        fadeDelayMs={0}           // ✅ REQUIRED
+        fadeDurationMs={300}      // ✅ REQUIRED
       />
       <div style={{ position: 'relative', zIndex: 2 }}>
         <CanvasLoader>
@@ -39,4 +43,5 @@ const Home = () => {
     </main>
   );
 };
+
 export default Home;
