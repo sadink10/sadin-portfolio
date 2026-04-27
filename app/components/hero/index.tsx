@@ -90,7 +90,6 @@ const Hero = () => {
           fontSize={2.5}
           letterSpacing={0.02}
           color="#ffffff"
-          depthTest={false}
           renderOrder={1001}
         >
           SADIN K
