@@ -31,14 +31,14 @@ const CanvasLoader = (props: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (!isMobile) {
-      setCanvasStyle(prev => ({
-        ...prev,
+      const borderStyle = {
         inset: '1rem',
         width: 'calc(100% - 2rem)',
         height: 'calc(100% - 2rem)',
-      }));
+      };
+      setCanvasStyle({ ...canvasStyle, ...borderStyle})
     }
-  }, []);
+  }, [isMobile]);
 
   useGSAP(() => {
     if (progress === 100) {
@@ -64,7 +64,8 @@ const CanvasLoader = (props: { children: React.ReactNode }) => {
           shadows={!isMobile}
           style={canvasStyle}
           ref={canvasRef}
-          dpr={isMobile ? [1, 1.5] : [1, 2]}>
+          dpr={[1, isMobile ? 1.5 : 2]}
+          gl={{ antialias: !isMobile }}>
           {/* <Perf/> */}
           <Suspense fallback={null}>
             <ambientLight intensity={0.5} />

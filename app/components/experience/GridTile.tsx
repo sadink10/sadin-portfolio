@@ -185,10 +185,10 @@ const GridTile = (props: GridTileProps) => {
       <group>
         <mesh position={[0, 0, -0.01]} ref={hoverBoxRef} scale={[0, 0, 0]}>
           <boxGeometry args={[4, 4, 0.5]}/>
-          <meshStandardMaterial
+          <meshPhysicalMaterial
             color="#050510"
-            metalness={0.3}
-            roughness={0.4}
+            metalness={0.9}
+            roughness={0.1}
             transparent={true}
             opacity={0.85}
           />

@@ -28,14 +28,6 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-canvas {
-  touch-action: none;
-  will-change: contents;
-  contain: layout style paint;
 }
 
 :root {

@@ -6,9 +6,8 @@ import { forwardRef, useMemo, useRef } from "react";
 import { isMobile } from "react-device-detect";
 import * as THREE from "three";
 
-// Shared geometry segment counts — lower on mobile for perf
-const SEG_HI = isMobile ? 24 : 32;
-const SEG_LO = isMobile ? 16 : 24;
+// Mobile uses 32 segments, desktop uses 64 — visually identical on small screens
+const SPHERE_SEGMENTS = isMobile ? 32 : 48;
 
 type PlanetProps = {
   texture: string;
@@ -51,16 +50,18 @@ const Earth = ({ size }: { size: number }) => {
   return (
     <group>
       <mesh>
-        <sphereGeometry args={[size, SEG_HI, SEG_HI]} />
-        <meshStandardMaterial
+        <sphereGeometry args={[size, SPHERE_SEGMENTS, SPHERE_SEGMENTS]} />
+        <meshPhysicalMaterial
           map={map}
           roughness={0.7}
           metalness={0.1}
+          clearcoat={0.1}
+          clearcoatRoughness={0.5}
         />
       </mesh>
       {/* Cloud layer */}
       <mesh ref={cloudsRef}>
-        <sphereGeometry args={[size * 1.015, SEG_HI, SEG_HI]} />
+        <sphereGeometry args={[size * 1.015, SPHERE_SEGMENTS, SPHERE_SEGMENTS]} />
         <meshStandardMaterial
           map={cloudsMap}
           transparent
@@ -71,7 +72,7 @@ const Earth = ({ size }: { size: number }) => {
       </mesh>
       {/* Subtle atmospheric glow */}
       <mesh>
-        <sphereGeometry args={[size * 1.15, SEG_LO, SEG_LO]} />
+        <sphereGeometry args={[size * 1.15, 32, 32]} />
         <meshBasicMaterial
           color="#4ab4ff"
           transparent
@@ -101,7 +102,7 @@ const Venus = ({ size }: { size: number }) => {
   return (
     <group>
       <mesh>
-        <sphereGeometry args={[size, SEG_HI, SEG_HI]} />
+        <sphereGeometry args={[size, SPHERE_SEGMENTS, SPHERE_SEGMENTS]} />
         <meshStandardMaterial
           map={surfaceMap}
           roughness={0.8}
@@ -109,7 +110,7 @@ const Venus = ({ size }: { size: number }) => {
         />
       </mesh>
       <mesh ref={atmosRef}>
-        <sphereGeometry args={[size * 1.01, SEG_HI, SEG_HI]} />
+        <sphereGeometry args={[size * 1.01, SPHERE_SEGMENTS, SPHERE_SEGMENTS]} />
         <meshStandardMaterial
           map={atmosMap}
           transparent
@@ -117,7 +118,7 @@ const Venus = ({ size }: { size: number }) => {
         />
       </mesh>
       <mesh>
-        <sphereGeometry args={[size * 1.1, SEG_LO, SEG_LO]} />
+        <sphereGeometry args={[size * 1.1, 32, 32]} />
         <meshBasicMaterial
           color="#d4a050"
           transparent
@@ -136,7 +137,7 @@ const Saturn = ({ size }: { size: number }) => {
   return (
     <group>
       <mesh>
-        <sphereGeometry args={[size, SEG_HI, SEG_HI]} />
+        <sphereGeometry args={[size, SPHERE_SEGMENTS, SPHERE_SEGMENTS]} />
         <meshStandardMaterial
           map={map}
           roughness={0.6}
@@ -162,7 +163,7 @@ const Saturn = ({ size }: { size: number }) => {
         </mesh>
       </group>
       <mesh>
-        <sphereGeometry args={[size * 1.12, SEG_LO, SEG_LO]} />
+        <sphereGeometry args={[size * 1.12, 32, 32]} />
         <meshBasicMaterial
           color="#e0c88b"
           transparent
@@ -196,7 +197,7 @@ const GenericPlanet = ({ name, size, texture }: { name: string; size: number; te
   return (
     <group>
       <mesh>
-        <sphereGeometry args={[size, SEG_HI, SEG_HI]} />
+        <sphereGeometry args={[size, SPHERE_SEGMENTS, SPHERE_SEGMENTS]} />
         <meshStandardMaterial
           map={map}
           roughness={roughness}
@@ -205,7 +206,7 @@ const GenericPlanet = ({ name, size, texture }: { name: string; size: number; te
       </mesh>
       {(name === "uranus" || name === "neptune" || name === "jupiter") && (
         <mesh>
-          <sphereGeometry args={[size * 1.1, SEG_LO, SEG_LO]} />
+          <sphereGeometry args={[size * 1.1, 32, 32]} />
           <meshBasicMaterial
             color={glowColor}
             transparent

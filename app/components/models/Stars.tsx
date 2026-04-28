@@ -9,9 +9,6 @@ import * as THREE from "three";
   Multi-layered star field for deep-space depth.
   Three layers at different distances with varying densities
   and brightness levels to create a parallax sense.
-
-  Performance: `lite` mode reduces counts for portal sub-scenes.
-  Mobile automatically halves all counts.
 ──────────────────────────────────────────────────────────────*/
 
 type StarLayerProps = {
@@ -26,9 +23,10 @@ type StarLayerProps = {
 function StarLayer({ count, radius, depth, size, opacity, twinkleSpeed }: StarLayerProps) {
   const ref = useRef<THREE.Points>(null);
 
-  const [positions, colors] = useMemo(() => {
+  const [positions, colors, phases] = useMemo(() => {
     const pos = new Float32Array(count * 3);
     const col = new Float32Array(count * 3);
+    const phs = new Float32Array(count);
 
     let seed = count * 7 + Math.floor(radius);
     const random = () => {
@@ -64,9 +62,11 @@ function StarLayer({ count, radius, depth, size, opacity, twinkleSpeed }: StarLa
         col[i * 3 + 1] = 1.0;
         col[i * 3 + 2] = 1.0;
       }
+
+      phs[i] = random() * Math.PI * 2;
     }
 
-    return [pos, col];
+    return [pos, col, phs];
   }, [count, radius, depth]);
 
   useFrame((state) => {
@@ -114,21 +114,13 @@ function StarLayer({ count, radius, depth, size, opacity, twinkleSpeed }: StarLa
 
 /*──────────────────────────────────────────────────────────────
   StarsContainer — layered star field
-  • lite=true  → used inside portal sub-scenes (30% of normal)
-  • mobile     → automatically 50% of desktop counts
 ──────────────────────────────────────────────────────────────*/
-interface StarsContainerProps {
-  lite?: boolean;
-}
-
-const StarsContainer = ({ lite = false }: StarsContainerProps) => {
-  const scale = lite ? 0.3 : isMobile ? 0.5 : 1;
-
+const StarsContainer = () => {
   return (
     <group>
       {/* Near layer — large, bright, sparse */}
       <StarLayer
-        count={Math.floor(800 * scale)}
+        count={isMobile ? 300 : 800}
         radius={60}
         depth={40}
         size={0.35}
@@ -137,7 +129,7 @@ const StarsContainer = ({ lite = false }: StarsContainerProps) => {
       />
       {/* Mid layer — medium stars */}
       <StarLayer
-        count={Math.floor(2500 * scale)}
+        count={isMobile ? 800 : 2500}
         radius={100}
         depth={80}
         size={0.2}
@@ -146,7 +138,7 @@ const StarsContainer = ({ lite = false }: StarsContainerProps) => {
       />
       {/* Far layer — faint dust */}
       <StarLayer
-        count={Math.floor(5000 * scale)}
+        count={isMobile ? 1500 : 3500}
         radius={180}
         depth={120}
         size={0.12}

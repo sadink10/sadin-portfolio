@@ -1,18 +1,12 @@
 'use client';
 
-import dynamic from 'next/dynamic';
-import { useEffect, useState } from 'react';
 import CanvasLoader from "./components/common/CanvasLoader";
 import ScrollWrapper from "./components/common/ScrollWrapper";
 import Experience from "./components/experience";
 import Footer from "./components/footer";
 import Hero from "./components/hero";
-
-// Dynamic import — GhostCursor module (+ Three.js post-processing) is never
-// downloaded on touch devices, saving ~50 KB parsed JS and an entire WebGL context.
-const GhostCursor = dynamic(() => import('./components/common/GhostCursor'), {
-  ssr: false,
-});
+import GhostCursor from "./components/common/GhostCursor";
+import { isMobile } from "react-device-detect";
 
 const noiseOverlayStyle = {
   backgroundColor: '#000000',
@@ -23,16 +17,9 @@ const noiseOverlayStyle = {
 };
 
 const Home = () => {
-  // Default to true (no cursor) — safe for SSR and mobile-first
-  const [isTouch, setIsTouch] = useState(true);
-
-  useEffect(() => {
-    setIsTouch('ontouchstart' in window || navigator.maxTouchPoints > 0);
-  }, []);
-
   return (
     <main style={{ position: 'relative', width: '100%', minHeight: '100vh', ...noiseOverlayStyle }}>
-      {!isTouch && (
+      {!isMobile && (
         <GhostCursor 
           className=""
           style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1 }}

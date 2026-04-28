@@ -128,7 +128,7 @@ function Nebula() {
     <group ref={ref}>
       {clouds.map((c, i) => (
         <mesh key={i} position={c.pos}>
-          <sphereGeometry args={[1, 20, 20]} />
+          <sphereGeometry args={[1, 12, 12]} />
           <meshBasicMaterial
             color={c.color}
             transparent
@@ -224,14 +224,14 @@ export function SpaceScene() {
 
   return (
     <group>
-      {/* ── LIGHTING (reduced for mobile) ───────────────────── */}
-      <ambientLight intensity={0.15} />
-      <directionalLight position={[15, 25, 15]} intensity={1.6} color="#fffcf0" castShadow={!isMobile} />
-      {!isMobile && <pointLight position={[-15, -10, -20]} intensity={0.35} color="#4488ff" />}
-      {!isMobile && <pointLight position={[10, 5, -40]} intensity={0.25} color="#ff6644" />}
+      {/* ── LIGHTING ──────────────────────────────────────────── */}
+      <ambientLight intensity={0.12} />
+      <directionalLight position={[15, 25, 15]} intensity={1.6} color="#fffcf0" castShadow />
+      <pointLight position={[-15, -10, -20]} intensity={0.35} color="#4488ff" />
+      <pointLight position={[10, 5, -40]} intensity={0.25} color="#ff6644" />
 
-      {/* ── BACKGROUND (lite mode — portal sub-scene) ─────────── */}
-      <StarsContainer lite />
+      {/* ── BACKGROUND (furthest – slow parallax) ────────────── */}
+      <StarsContainer />
       <Nebula />
 
       {/* ── MID-DEPTH (glowing orbs) ─────────────────────────── */}
@@ -239,7 +239,7 @@ export function SpaceScene() {
 
       {/* ── FOREGROUND (scrolls with camera) ─────────────────── */}
       <group ref={groupRef}>
-        <Asteroids count={isMobile ? 60 : 200} />
+        <Asteroids count={isMobile ? 100 : 200} />
 
         {/* Milestone planets at timeline positions */}
         {WORK_TIMELINE.map((milestone, i) => {

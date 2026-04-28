@@ -3,7 +3,6 @@
 import { Float } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
-import { isMobile } from "react-device-detect";
 import * as THREE from "three";
 import StarsContainer from "./Stars";
 
@@ -153,17 +152,23 @@ function CoreObject() {
 export function DataCoreScene() {
   return (
     <group>
-      {/* Background depth using Stars — lite for portal sub-scene */}
-      <StarsContainer lite />
+      {/* Background depth using Stars */}
+      <StarsContainer />
       
-      {/* Consolidated lighting — fewer dynamic lights on mobile */}
-      <ambientLight intensity={isMobile ? 0.35 : 0.25} color="#1a1a3a" />
+      {/* Stronger ambient lighting */}
+      <ambientLight intensity={0.25} color="#1a1a3a" />
+      
+      {/* Key light for primary illumination */}
       <directionalLight position={[5, 10, 5]} intensity={1.5} color="#ffffff" />
-      {!isMobile && <directionalLight position={[-10, 5, -15]} intensity={2.0} color="#7c4dff" />}
-      {!isMobile && <pointLight position={[10, 8, 8]} intensity={1.0} color="#00e5ff" />}
-      {!isMobile && <pointLight position={[-10, -5, -8]} intensity={0.8} color="#b388ff" />}
+      
+      {/* Rim light to highlight edges and separate from background */}
+      <directionalLight position={[-10, 5, -15]} intensity={2.0} color="#7c4dff" />
+      
+      {/* Fill lights for colored accents */}
+      <pointLight position={[10, 8, 8]} intensity={1.0} color="#00e5ff" />
+      <pointLight position={[-10, -5, -8]} intensity={0.8} color="#b388ff" />
 
-      <DataParticles count={isMobile ? 80 : 250} />
+      <DataParticles count={150} />
       
       {/* Float to make the core gently bob independently */}
       <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.5}>

@@ -34,10 +34,17 @@ const AwwardsBadge = () => {
   useEffect(() => {
     if (isPortalActive) return;
     if (startAnimation && badgeRef.current) {
-      // Direct style mutation — avoids creating GSAP tweens every frame
-      badgeRef.current.style.right = `${-scrollProgress * 1000}px`;
+      gsap.to(badgeRef.current, {
+        right: -scrollProgress * 1000,
+        duration: 0,
+        ease: 'power2.out',
+      });
     }
-  }, [startAnimation, scrollProgress, isPortalActive]);
+
+    return () => {
+      gsap.killTweensOf(badgeRef.current);
+    }
+  }, [startAnimation, scrollProgress]);
 
   useEffect(() => {
     if (!badgeRef.current) return;

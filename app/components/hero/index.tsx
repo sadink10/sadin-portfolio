@@ -115,10 +115,10 @@ const Hero = () => {
       {/* Layered deep-space star field */}
       <StarsContainer />
 
-      {/* ── Cinematic Lighting (reduced on mobile) ────────── */}
+      {/* ── Cinematic Lighting ─────────────────────────────── */}
 
-      {/* Subtle fill — slightly brighter on mobile to compensate for fewer lights */}
-      <ambientLight intensity={isMobile ? 0.25 : 0.15} color="#1a1a3a" />
+      {/* Subtle fill — just enough to see silhouettes */}
+      <ambientLight intensity={0.15} color="#1a1a3a" />
 
       {/* Main directional key light — warm sun from upper-right */}
       <directionalLight
@@ -128,34 +128,33 @@ const Hero = () => {
         castShadow={!isMobile}
       />
 
-      {/* Secondary lights only on desktop */}
+      {/* Cool blue rim from behind-left for depth separation */}
+      <directionalLight
+        position={[-8, 4, -10]}
+        intensity={0.8}
+        color="#4488cc"
+      />
+
+      {/* Warm accent from below for cinematic drama — skip on mobile */}
       {!isMobile && (
-        <>
-          {/* Cool blue rim from behind-left for depth separation */}
-          <directionalLight
-            position={[-8, 4, -10]}
-            intensity={0.8}
-            color="#4488cc"
-          />
+        <pointLight
+          position={[0, -8, -5]}
+          intensity={1.2}
+          color="#cc6644"
+          distance={30}
+          decay={2}
+        />
+      )}
 
-          {/* Warm accent from below for cinematic drama */}
-          <pointLight
-            position={[0, -8, -5]}
-            intensity={1.2}
-            color="#cc6644"
-            distance={30}
-            decay={2}
-          />
-
-          {/* Far back fill to illuminate distant planets */}
-          <pointLight
-            position={[0, 0, -25]}
-            intensity={0.6}
-            color="#6666aa"
-            distance={40}
-            decay={2}
-          />
-        </>
+      {/* Far back fill to illuminate distant planets — skip on mobile */}
+      {!isMobile && (
+        <pointLight
+          position={[0, 0, -25]}
+          intensity={0.6}
+          color="#6666aa"
+          distance={40}
+          decay={2}
+        />
       )}
 
       {/* ── Depth Fog ──────────────────────────────────────── */}
@@ -164,7 +163,7 @@ const Hero = () => {
       <CloudContainer />
 
       <group position={[0, -25, 5.69]}>
-        <pointLight castShadow position={[1, 1, -2.5]} intensity={60} distance={10}/>
+        <pointLight position={[1, 1, -2.5]} intensity={60} distance={10}/>
         <WindowModel receiveShadow/>
         <TextWindow/>
       </group>
