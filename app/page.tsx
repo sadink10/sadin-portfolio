@@ -6,6 +6,7 @@ import Experience from "./components/experience";
 import Footer from "./components/footer";
 import Hero from "./components/hero";
 import GhostCursor from "./components/common/GhostCursor";
+import WorkPreviewPanel from "./components/experience/work/WorkPreviewPanel";
 import { isMobile } from "react-device-detect";
 
 const noiseOverlayStyle = {
@@ -42,6 +43,7 @@ const Home = () => {
             <Footer/>
           </ScrollWrapper>
         </CanvasLoader>
+        <WorkPreviewPanel />
       </div>
     </main>
   );

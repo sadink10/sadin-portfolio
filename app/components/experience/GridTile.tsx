@@ -100,6 +100,8 @@ const GridTile = (props: GridTileProps) => {
 
     gsap.to(camera.position, {
       x: 0,
+      y: -37,
+      z: 12,
       duration: 1,
     });
 
