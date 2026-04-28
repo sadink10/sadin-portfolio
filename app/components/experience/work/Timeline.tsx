@@ -122,7 +122,6 @@ const Timeline = ({ progress }: { progress: number }) => {
   const visibleTimelinePoints = useMemo(() => timeline.slice(0, Math.max(1, Math.round(progress * (timeline.length - 1) + 1))), [timeline, progress]);
 
   const [visibleDashedCurvePoints, setVisibleDashedCurvePoints] = useState<THREE.Vector3[]>([]);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useFrame((_, delta) => {
     if (isActive) {
@@ -144,6 +143,7 @@ const Timeline = ({ progress }: { progress: number }) => {
   });
 
   const groupRef = useRef<THREE.Group>(null);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     const tl = gsap.timeline();
@@ -164,20 +164,29 @@ const Timeline = ({ progress }: { progress: number }) => {
 
     if (isActive) {
       let i = 0;
-      clearInterval(intervalRef.current!);
-      setTimeout(() => {
-        intervalRef.current = setInterval(() => {
-          const p = i++ / 100;
-          setVisibleDashedCurvePoints(curvePoints.slice(0, Math.max(1, Math.ceil(p * curvePoints.length))));
-          if (i > 100 && intervalRef.current) clearInterval(intervalRef.current);
-        }, 10);
-      }, 1000);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      const startTime = performance.now() + 1000; // 1s delay
+      const animateDash = () => {
+        const now = performance.now();
+        if (now < startTime) {
+          rafRef.current = requestAnimationFrame(animateDash);
+          return;
+        }
+        const p = i++ / 100;
+        setVisibleDashedCurvePoints(curvePoints.slice(0, Math.max(1, Math.ceil(p * curvePoints.length))));
+        if (i <= 100) {
+          rafRef.current = requestAnimationFrame(animateDash);
+        }
+      };
+      rafRef.current = requestAnimationFrame(animateDash);
     } else {
       setVisibleDashedCurvePoints([]);
-      clearInterval(intervalRef.current!);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     }
 
-    return () => clearInterval(intervalRef.current!);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
   }, [isActive]);
 
   return (

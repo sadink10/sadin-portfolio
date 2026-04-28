@@ -5,6 +5,7 @@ import { useProgress } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
+import { isMobile } from "react-device-detect";
 import * as THREE from "three";
 import StarsContainer from "../models/Stars";
 import CloudContainer from "../models/Cloud";
@@ -114,43 +115,48 @@ const Hero = () => {
       {/* Layered deep-space star field */}
       <StarsContainer />
 
-      {/* ── Cinematic Lighting ─────────────────────────────── */}
+      {/* ── Cinematic Lighting (reduced on mobile) ────────── */}
 
-      {/* Subtle fill — just enough to see silhouettes */}
-      <ambientLight intensity={0.15} color="#1a1a3a" />
+      {/* Subtle fill — slightly brighter on mobile to compensate for fewer lights */}
+      <ambientLight intensity={isMobile ? 0.25 : 0.15} color="#1a1a3a" />
 
       {/* Main directional key light — warm sun from upper-right */}
       <directionalLight
         position={[12, 8, 6]}
         intensity={2.5}
         color="#fff4e0"
-        castShadow
+        castShadow={!isMobile}
       />
 
-      {/* Cool blue rim from behind-left for depth separation */}
-      <directionalLight
-        position={[-8, 4, -10]}
-        intensity={0.8}
-        color="#4488cc"
-      />
+      {/* Secondary lights only on desktop */}
+      {!isMobile && (
+        <>
+          {/* Cool blue rim from behind-left for depth separation */}
+          <directionalLight
+            position={[-8, 4, -10]}
+            intensity={0.8}
+            color="#4488cc"
+          />
 
-      {/* Warm accent from below for cinematic drama */}
-      <pointLight
-        position={[0, -8, -5]}
-        intensity={1.2}
-        color="#cc6644"
-        distance={30}
-        decay={2}
-      />
+          {/* Warm accent from below for cinematic drama */}
+          <pointLight
+            position={[0, -8, -5]}
+            intensity={1.2}
+            color="#cc6644"
+            distance={30}
+            decay={2}
+          />
 
-      {/* Far back fill to illuminate distant planets */}
-      <pointLight
-        position={[0, 0, -25]}
-        intensity={0.6}
-        color="#6666aa"
-        distance={40}
-        decay={2}
-      />
+          {/* Far back fill to illuminate distant planets */}
+          <pointLight
+            position={[0, 0, -25]}
+            intensity={0.6}
+            color="#6666aa"
+            distance={40}
+            decay={2}
+          />
+        </>
+      )}
 
       {/* ── Depth Fog ──────────────────────────────────────── */}
       <fog attach="fog" args={["#030308", 12, 35]} />

@@ -3,6 +3,7 @@
 import { Float, useScroll } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
+import { isMobile } from "react-device-detect";
 import * as THREE from "three";
 import Planet from "../3d/Planet";
 import StarsContainer from "./Stars";
@@ -223,14 +224,14 @@ export function SpaceScene() {
 
   return (
     <group>
-      {/* ── LIGHTING ──────────────────────────────────────────── */}
-      <ambientLight intensity={0.12} />
-      <directionalLight position={[15, 25, 15]} intensity={1.6} color="#fffcf0" castShadow />
-      <pointLight position={[-15, -10, -20]} intensity={0.35} color="#4488ff" />
-      <pointLight position={[10, 5, -40]} intensity={0.25} color="#ff6644" />
+      {/* ── LIGHTING (reduced for mobile) ───────────────────── */}
+      <ambientLight intensity={0.15} />
+      <directionalLight position={[15, 25, 15]} intensity={1.6} color="#fffcf0" castShadow={!isMobile} />
+      {!isMobile && <pointLight position={[-15, -10, -20]} intensity={0.35} color="#4488ff" />}
+      {!isMobile && <pointLight position={[10, 5, -40]} intensity={0.25} color="#ff6644" />}
 
-      {/* ── BACKGROUND (furthest – slow parallax) ────────────── */}
-      <StarsContainer />
+      {/* ── BACKGROUND (lite mode — portal sub-scene) ─────────── */}
+      <StarsContainer lite />
       <Nebula />
 
       {/* ── MID-DEPTH (glowing orbs) ─────────────────────────── */}
@@ -238,7 +239,7 @@ export function SpaceScene() {
 
       {/* ── FOREGROUND (scrolls with camera) ─────────────────── */}
       <group ref={groupRef}>
-        <Asteroids count={350} />
+        <Asteroids count={isMobile ? 60 : 200} />
 
         {/* Milestone planets at timeline positions */}
         {WORK_TIMELINE.map((milestone, i) => {

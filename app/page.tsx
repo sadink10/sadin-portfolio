@@ -1,11 +1,18 @@
 'use client';
 
+import dynamic from 'next/dynamic';
+import { useEffect, useState } from 'react';
 import CanvasLoader from "./components/common/CanvasLoader";
 import ScrollWrapper from "./components/common/ScrollWrapper";
 import Experience from "./components/experience";
 import Footer from "./components/footer";
 import Hero from "./components/hero";
-import GhostCursor from "./components/common/GhostCursor";
+
+// Dynamic import — GhostCursor module (+ Three.js post-processing) is never
+// downloaded on touch devices, saving ~50 KB parsed JS and an entire WebGL context.
+const GhostCursor = dynamic(() => import('./components/common/GhostCursor'), {
+  ssr: false,
+});
 
 const noiseOverlayStyle = {
   backgroundColor: '#000000',
@@ -16,21 +23,30 @@ const noiseOverlayStyle = {
 };
 
 const Home = () => {
+  // Default to true (no cursor) — safe for SSR and mobile-first
+  const [isTouch, setIsTouch] = useState(true);
+
+  useEffect(() => {
+    setIsTouch('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
+
   return (
     <main style={{ position: 'relative', width: '100%', minHeight: '100vh', ...noiseOverlayStyle }}>
-      <GhostCursor 
-        className=""   // ✅ REQUIRED
-        style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1 }}
-        color="#ffffff"
-        brightness={0.7}
-        trailLength={15}
-        inertia={0.15}
-        bloomStrength={0.05}
-        grainIntensity={0.02}
-        targetPixels={120}        // ✅ REQUIRED
-        fadeDelayMs={0}           // ✅ REQUIRED
-        fadeDurationMs={300}      // ✅ REQUIRED
-      />
+      {!isTouch && (
+        <GhostCursor 
+          className=""
+          style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1 }}
+          color="#ffffff"
+          brightness={0.7}
+          trailLength={15}
+          inertia={0.15}
+          bloomStrength={0.05}
+          grainIntensity={0.02}
+          targetPixels={120}
+          fadeDelayMs={0}
+          fadeDurationMs={300}
+        />
+      )}
       <div style={{ position: 'relative', zIndex: 2 }}>
         <CanvasLoader>
           <ScrollWrapper>
